@@ -26,7 +26,7 @@
     dockIndex: 'Open the Codex index', dockIndexOpen: 'Open the Codex index, ',
     closeTab: 'Close the tab ', opened: 'Tab opened: ', inCodex: ' in the Codex.', focused: 'Tab already open, now in focus: ',
     closed: 'Tab closed: ', lastClosed: 'Last tab closed: ', dockEmpty: '. The dock shows only the Codex again.',
-    minimized: 'Codex minimized, ', kept: ' kept in the dock.'
+    minimized: 'Codex minimized, ', kept: ' kept in the dock.', minimize: 'Minimize the Codex'
   };
   /* the Codex families in the order of the index, keyed by the option names of the CMS field Family */
   var FAMILIES = [
@@ -101,6 +101,12 @@
   BY_SLUG.set('index', ENTRIES.get('IDX'));
 
   if (dockMin) dockMin.innerHTML = svgIco(ICON.minimize, 'dock_minimize-icon');
+  /* the reader's own minimize button, at its top right corner (João, 03/10/2026: the modal had none; the one in the
+     dock stays). Built here, like the tabs, so its styles are in the page's Embed (.codex_minimize). */
+  var panelMin = document.createElement('button');
+  panelMin.type = 'button'; panelMin.className = 'codex_minimize'; panelMin.setAttribute('aria-label', TEXT.minimize);
+  panelMin.innerHTML = svgIco(ICON.minimize, 'dock_minimize-icon');
+  panel.appendChild(panelMin);
   /* elements that start hidden: the paste drops the hidden attribute, so they carry data-start-hidden until now */
   $$('[data-start-hidden]').forEach(function (el) { el.hidden = true; el.removeAttribute('data-start-hidden'); });
 
@@ -378,6 +384,7 @@
   if (dockHome) dockHome.addEventListener('click', function (ev) { openTab('IDX', dockHome, { pt: pointOf(ev, dockHome) }); });
   if (dockMore) dockMore.addEventListener('click', function () { show(dockMore); });
   if (dockMin) dockMin.addEventListener('click', minimize);
+  panelMin.addEventListener('click', minimize);
   if (backdrop) backdrop.addEventListener('click', minimize);
   if (mqMobile.addEventListener) mqMobile.addEventListener('change', layoutChips);
 
