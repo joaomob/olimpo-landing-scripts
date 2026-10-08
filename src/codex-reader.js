@@ -17,27 +17,70 @@
   var gsap = window.gsap || null, Flip = window.Flip || null;
   var say = function (msg) { if (live) { live.textContent = ''; setTimeout(function () { live.textContent = msg; }, 30); } };
 
-  /* the visitor text of the reader, in one place (the site is English only for now) */
-  var TEXT = {
-    index: 'Index', indexMeta: 'Codex · index',
-    indexIntro: 'Everything in the Codex: foundations, pantheon, method, origin, archetypes and legal documents. Each item opens as a tab in this same reader.',
-    loading: 'Opening…', failed: 'This entry did not load here.', openPage: 'Open it as a page',
-    tab: ' tab', tabs: ' tabs', more: ' more in the Codex',
-    dockIndex: 'Open the Codex index', dockIndexOpen: 'Open the Codex index, ',
-    closeTab: 'Close the tab ', opened: 'Tab opened: ', inCodex: ' in the Codex.', focused: 'Tab already open, now in focus: ',
-    closed: 'Tab closed: ', lastClosed: 'Last tab closed: ', dockEmpty: '. The dock shows only the Codex again.',
-    minimized: 'Codex minimized, ', kept: ' kept in the dock.', minimize: 'Minimize the Codex'
+  /* the language of the page: the Home is English, /es and /pt are its Spanish and Portuguese copies (João, 08/10/2026:
+     "o webflow so tem ingles, sendo que deveria ter es/pt tbm"); the Codex entries carry the three languages in the CMS */
+  var LANG = /^\/(es|pt)(\/|$)/.test(location.pathname) ? location.pathname.slice(1, 3) : 'en';
+  /* the visitor text of the reader, per language (Spanish and Portuguese from the prototypes, src-es/ and src/) */
+  var TEXTS = {
+    en: {
+      index: 'Index', indexMeta: 'Codex · index',
+      indexIntro: 'Everything in the Codex: foundations, pantheon, method, origin, archetypes and legal documents. Each item opens as a tab in this same reader.',
+      loading: 'Opening…', failed: 'This entry did not load here.', openPage: 'Open it as a page', moreInCodex: 'More in the Codex',
+      tab: ' tab', tabs: ' tabs', more: function (n) { return n + ' more in the Codex'; },
+      dockIndex: 'Open the Codex index', dockIndexOpen: 'Open the Codex index, ',
+      closeTab: 'Close the tab ', opened: 'Tab opened: ', inCodex: ' in the Codex.', focused: 'Tab already open, now in focus: ',
+      closed: 'Tab closed: ', lastClosed: 'Last tab closed: ', dockEmpty: '. The dock shows only the Codex again.',
+      minimized: 'Codex minimized, ', kept: ' kept in the dock.', minimize: 'Minimize the Codex'
+    },
+    es: {
+      index: 'Índice', indexMeta: 'Códex · índice',
+      indexIntro: 'Todo lo que está en el Códex: fundamentos, panteón, método, origen, arquetipos y documentos legales. Cada elemento se abre como pestaña en este mismo lector.',
+      loading: 'Abriendo…', failed: 'Esta entrada no se cargó aquí.', openPage: 'Ábrela como página', moreInCodex: 'Más en el Códex',
+      tab: ' pestaña', tabs: ' pestañas', more: function (n) { return n + ' más en el Códex'; },
+      dockIndex: 'Abrir el Códex en el índice', dockIndexOpen: 'Abrir el Códex en el índice, ',
+      closeTab: 'Cerrar la pestaña ', opened: 'Pestaña abierta: ', inCodex: ' en el Códex.', focused: 'Pestaña ya abierta, en foco: ',
+      closed: 'Pestaña cerrada: ', lastClosed: 'Última pestaña cerrada: ', dockEmpty: '. El dock vuelve a mostrar solo el Códex.',
+      minimized: 'Códex minimizado, ', kept: ' guardadas en el dock.', minimize: 'Minimizar el Códex'
+    },
+    pt: {
+      index: 'Índice', indexMeta: 'Códex · índice',
+      indexIntro: 'Tudo o que está no Códex: fundamentos, panteão, método, origem, arquétipos e documentos legais. Cada item abre como aba neste mesmo leitor.',
+      loading: 'Abrindo…', failed: 'Este verbete não carregou aqui.', openPage: 'Abrir como página', moreInCodex: 'Mais no Códex',
+      tab: ' aba', tabs: ' abas', more: function (n) { return 'Mais ' + n + ' no Códex'; },
+      dockIndex: 'Abrir o Códex no índice', dockIndexOpen: 'Abrir o Códex no índice, ',
+      closeTab: 'Fechar a aba ', opened: 'Aba aberta: ', inCodex: ' no Códex.', focused: 'Aba já aberta, em foco: ',
+      closed: 'Aba fechada: ', lastClosed: 'Última aba fechada: ', dockEmpty: '. O dock volta a mostrar só o Códex.',
+      minimized: 'Códex minimizado, ', kept: ' guardadas no dock.', minimize: 'Minimizar o Códex'
+    }
   };
-  /* the Codex families in the order of the index, keyed by the option names of the CMS field Family */
-  var FAMILIES = [
-    ['Foundations', 'The psychology and philosophy behind the method', ['article', 'articles'], 'A'],
-    ['The pantheon', 'Where each name in the product comes from', ['article', 'articles'], 'B'],
-    ['The method', 'How the product works, from the inside', ['article', 'articles'], 'C'],
-    ['The origin', 'Who made Olimpo, why, and where it is going', ['article', 'articles'], 'D'],
-    ['Archetypes', 'The 16 MBTI types', ['archetype', 'archetypes'], 'T'],
-    ['Temperaments', 'The four rhythms of reaction', ['temperament', 'temperaments'], 'P'],
-    ['Legal', 'Terms, privacy and cookies', ['document', 'documents'], 'L']
-  ];
+  var TEXT = TEXTS[LANG];
+  /* the Codex families in the order of the index: the option name of the CMS field Family (the key, English), the
+     name and description shown, the singular and plural of its items, and its letter */
+  var FAMILY_TEXT = {
+    en: [['Foundations', 'Foundations', 'The psychology and philosophy behind the method', ['article', 'articles'], 'A'],
+      ['The pantheon', 'The pantheon', 'Where each name in the product comes from', ['article', 'articles'], 'B'],
+      ['The method', 'The method', 'How the product works, from the inside', ['article', 'articles'], 'C'],
+      ['The origin', 'The origin', 'Who made Olimpo, why, and where it is going', ['article', 'articles'], 'D'],
+      ['Archetypes', 'Archetypes', 'The 16 MBTI types', ['archetype', 'archetypes'], 'T'],
+      ['Temperaments', 'Temperaments', 'The four rhythms of reaction', ['temperament', 'temperaments'], 'P'],
+      ['Legal', 'Legal', 'Terms, privacy and cookies', ['document', 'documents'], 'L']],
+    es: [['Foundations', 'Fundamentos', 'La psicología y la filosofía detrás del método', ['artículo', 'artículos'], 'A'],
+      ['The pantheon', 'El panteón', 'De dónde viene cada nombre del producto', ['artículo', 'artículos'], 'B'],
+      ['The method', 'El método', 'Cómo funciona el producto, por dentro', ['artículo', 'artículos'], 'C'],
+      ['The origin', 'El origen', 'Quién hizo Olimpo, por qué y hacia dónde va', ['artículo', 'artículos'], 'D'],
+      ['Archetypes', 'Arquetipos', 'Los 16 tipos del MBTI', ['arquetipo', 'arquetipos'], 'T'],
+      ['Temperaments', 'Temperamentos', 'Los cuatro ritmos de reacción', ['temperamento', 'temperamentos'], 'P'],
+      ['Legal', 'Legal', 'Términos, privacidad y cookies', ['documento', 'documentos'], 'L']],
+    pt: [['Foundations', 'Fundamentos', 'A psicologia e a filosofia por trás do método', ['artigo', 'artigos'], 'A'],
+      ['The pantheon', 'O panteão', 'De onde vem cada nome do produto', ['artigo', 'artigos'], 'B'],
+      ['The method', 'O método', 'Como o produto funciona, por dentro', ['artigo', 'artigos'], 'C'],
+      ['The origin', 'A origem', 'Quem fez o Olimpo, por que e para onde vai', ['artigo', 'artigos'], 'D'],
+      ['Archetypes', 'Arquétipos', 'Os 16 tipos do MBTI', ['arquétipo', 'arquétipos'], 'T'],
+      ['Temperaments', 'Temperamentos', 'Os quatro ritmos de reação', ['temperamento', 'temperamentos'], 'P'],
+      ['Legal', 'Legal', 'Termos, privacidade e cookies', ['documento', 'documentos'], 'L']]
+  };
+  var FAMILIES = FAMILY_TEXT[LANG];
+  var familyName = function (key) { var f = FAMILIES.filter(function (x) { return x[0] === key; })[0]; return f ? f[1] : key; };
   /* one icon per Codex entry and per family (Lucide, ISC), as in the prototype */
   var CODEX_ICO = {"MEL":"<path d=\"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z\"/>",
     "CHO":"<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/>",
@@ -138,8 +181,8 @@
 
   if (indexEl) indexEl.innerHTML = '<button class="codex_link is-index" type="button" data-codex="IDX"><span class="codex_link-code">' + svgIco(FAM_ICO.IDX, 'codex_icon') + '</span><span>' + TEXT.index + '</span></button>' +
     FAMILIES.map(function (f) {
-      return '<div class="codex_family"><p class="codex_family-title">' + f[0] + '</p><div class="codex_family-list">' + inFamily(f[0]).map(function (e) {
-        return '<button class="codex_link" type="button" data-codex="' + e.code + '"><span class="codex_link-code">' + (ico(e.code, 'codex_icon') || (f[3] === 'T' ? e.code : '')) + '</span><span>' + esc(e.title) + '</span></button>';
+      return '<div class="codex_family"><p class="codex_family-title">' + f[1] + '</p><div class="codex_family-list">' + inFamily(f[0]).map(function (e) {
+        return '<button class="codex_link" type="button" data-codex="' + e.code + '"><span class="codex_link-code">' + (ico(e.code, 'codex_icon') || (f[4] === 'T' ? e.code : '')) + '</span><span>' + esc(e.title) + '</span></button>';
       }).join('') + '</div></div>';
     }).join('');
 
@@ -148,9 +191,9 @@
       '<h1 class="article_title" tabindex="-1">' + TEXT.index + '</h1><p class="article_index-intro">' + TEXT.indexIntro + '</p>' +
       '<div class="article_index-grid">' + FAMILIES.map(function (f) {
         var items = inFamily(f[0]), n = items.length;
-        return '<details class="family_card"><summary class="family_header"><span class="family_icon">' + svgIco(FAM_ICO[f[3]], 'family_icon-graphic') + '</span>' +
-          '<span class="family_text"><span class="family_name">' + f[0] + '</span><span class="family_description">' + f[1] + '</span></span>' +
-          '<span class="family_count">' + n + ' ' + (n === 1 ? f[2][0] : f[2][1]) + '</span><span class="family_chevron" aria-hidden="true"></span></summary>' + doors(items) + '</details>';
+        return '<details class="family_card"><summary class="family_header"><span class="family_icon">' + svgIco(FAM_ICO[f[4]], 'family_icon-graphic') + '</span>' +
+          '<span class="family_text"><span class="family_name">' + f[1] + '</span><span class="family_description">' + f[2] + '</span></span>' +
+          '<span class="family_count">' + n + ' ' + (n === 1 ? f[3][0] : f[3][1]) + '</span><span class="family_chevron" aria-hidden="true"></span></summary>' + doors(items) + '</details>';
       }).join('') + '</div></article>';
   }
 
@@ -172,6 +215,25 @@
       $$('.w-dyn-bind-empty', art).forEach(function (el) { var cover = el.closest('.article_cover'); (cover || el).remove(); });
       if (art.dataset.family !== 'Archetypes') $$('.article_type', art).forEach(function (el) { el.remove(); });
       $$('.w-condition-invisible', art).forEach(function (el) { el.remove(); });
+      /* /es and /pt: the title, the phrase and the body come from the hidden block of the entry page (article_i18n,
+         bound to the CMS fields name-es, phrase-es, body-es...), and the family name, the related heading and the
+         names of the related entries from this page's language; the block goes away in every language */
+      var store = $('.article_i18n', art);
+      if (LANG !== 'en' && store) {
+        var pick = function (k) { return $('[data-i18n="' + k + '-' + LANG + '"]', store); };
+        var t = pick('title'), ph = pick('phrase'), bd = pick('body');
+        var h = $('.article_title', art), p = $('.article_phrase', art), b = $('.article_body', art);
+        if (t && h && t.textContent.trim()) h.textContent = t.textContent;
+        if (ph && p) p.textContent = ph.textContent;
+        if (bd && b && bd.innerHTML.trim()) b.innerHTML = bd.innerHTML;
+      }
+      if (store) store.remove();
+      if (LANG !== 'en') {
+        var meta = $$('.article_meta span', art).filter(function (sp) { return !sp.classList.contains('section-label_dot'); })[0];
+        if (meta) meta.textContent = familyName(meta.textContent.trim());
+        var rel = $('.article_related h3', art); if (rel) rel.textContent = TEXT.moreInCodex;
+        $$('.article_related a[href^="/codex/"]', art).forEach(function (a) { var x = BY_SLUG.get(a.getAttribute('href').slice(7)); if (x) a.textContent = x.title; });
+      }
       var h1 = $('.article_title', art); if (h1) h1.setAttribute('tabindex', '-1');
       /* archetypes: the god and the goddess of the type, from its card on the Home (the prototype's reader showed them;
          the CMS has no field for them) */
@@ -194,7 +256,7 @@
     var limit = !isOpen && !mqMobile.matches;
     var hidden = limit ? Math.max(0, tabs.length - MAX_CHIPS) : 0;
     tabs.forEach(function (t, i) { t.tab.classList.toggle('is-overflow', i < hidden); });
-    if (dockMore) { dockMore.hidden = !hidden; dockMore.textContent = '+' + hidden; dockMore.setAttribute('aria-label', plural(hidden) + TEXT.more); }
+    if (dockMore) { dockMore.hidden = !hidden; dockMore.textContent = '+' + hidden; dockMore.setAttribute('aria-label', TEXT.more(plural(hidden))); }
   }
   function updateCounts() {
     var n = tabs.length;

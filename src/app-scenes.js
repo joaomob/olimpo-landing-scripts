@@ -12,11 +12,23 @@
   var clamp = function (v, a, b) { return Math.min(Math.max(v, a), b); };
   var gsap = window.gsap || null;
 
-  /* the visitor text of the Focus Mode mockup, by phase */
+  /* the visitor text of the Focus Mode mockup, by phase, in the page's language (the Home is English, /es and /pt its
+     copies, 08/10/2026; Spanish and Portuguese from the prototypes' phones.js) */
+  var LANG = /^\/(es|pt)(\/|$)/.test(location.pathname) ? location.pathname.slice(1, 3) : 'en';
   var FOCUS_TEXT = {
-    focus: { phase: 'FOCUS', label: 'Pause', icon: '❚❚', task: 'Add up the fixed costs', meta: '🏠 Apartment down payment · Phase 1' },
-    rest: { phase: '🌿 BREAK', label: 'Resume', icon: '▶', task: 'Breathe, stretch', meta: 'Short break · 2 min' }
-  };
+    en: {
+      focus: { phase: 'FOCUS', label: 'Pause', icon: '❚❚', task: 'Add up the fixed costs', meta: '🏠 Apartment down payment · Phase 1' },
+      rest: { phase: '🌿 BREAK', label: 'Resume', icon: '▶', task: 'Breathe, stretch', meta: 'Short break · 2 min' }
+    },
+    es: {
+      focus: { phase: 'FOCO', label: 'Pausar', icon: '❚❚', task: 'Sumar los gastos fijos', meta: '🏠 Pago inicial del departamento · Fase 1' },
+      rest: { phase: '🌿 DESCANSO', label: 'Reanudar', icon: '▶', task: 'Respirar, estirarse', meta: 'Pausa corta · 2 min' }
+    },
+    pt: {
+      focus: { phase: 'FOCO', label: 'Pausar', icon: '❚❚', task: 'Somar os gastos fixos', meta: '🏠 Entrada do apartamento · Fase 1' },
+      rest: { phase: '🌿 DESCANSO', label: 'Retomar', icon: '▶', task: 'Respirar, alongar', meta: 'Pausa curta · 2 min' }
+    }
+  }[LANG];
 
   var onceVisible = function (els, cb, opts) {
     if (!('IntersectionObserver' in window)) { els.forEach(cb); return; }
