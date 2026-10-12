@@ -72,6 +72,13 @@
   if (!box) return;
   var prefsButton = box.querySelector('[data-cookie-choice="prefs"]');
   var toggles = [].slice.call(box.querySelectorAll('[data-cookie-toggle]'));
+  /* what a screen reader says follows the words on the page, which each language sets (Component props) */
+  var title = box.querySelector('.cookie_title');
+  if (title) box.setAttribute('aria-label', title.textContent.replace(/.s*$/, ''));
+  toggles.forEach(function (t) {
+    var name = t.parentNode && t.parentNode.querySelector('.cookie_row-name');
+    if (name) t.setAttribute('aria-label', name.textContent);
+  });
   function setSwitch(t, on) { t.setAttribute('aria-checked', on ? 'true' : 'false'); }
   function setPrefs(open) {
     box.classList.toggle('is-prefs', open);
